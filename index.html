@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#10110f">
+  <meta name="description" content="Исследование код-свитчинга: статистика, примеры смешанной речи и словарь-помощник.">
+  <title>Код-свитчинг — исследование речи</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #10110f;
+      --surface: #181a17;
+      --surface-raised: #20221e;
+      --text: #f1f0e9;
+      --muted: #a4a69c;
+      --line: rgba(241, 240, 233, .12);
+      --lime: #d7fb70;
+      --violet: #b7a3ff;
+      --orange: #ffb875;
+      --mint: #83e0bb;
+      --radius: 22px;
+      --content: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 92px; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 82% 4%, rgba(183, 163, 255, .09), transparent 34rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    a { color: inherit; }
+    a:focus-visible { outline: 2px solid var(--lime); outline-offset: 5px; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    ::selection { background: var(--lime); color: var(--bg); }
+
+    .wrap { width: min(var(--content), calc(100% - 40px)); margin-inline: auto; }
+
+    .topbar {
+      position: sticky;
+      z-index: 10;
+      top: 0;
+      border-bottom: 1px solid var(--line);
+      background: rgba(16, 17, 15, .84);
+      backdrop-filter: blur(16px);
+    }
+
+    .nav {
+      display: flex;
+      min-height: 72px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--text);
+      font-size: .94rem;
+      font-weight: 750;
+      letter-spacing: -.03em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--lime);
+      color: var(--bg);
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .nav-links { display: flex; flex-wrap: wrap; gap: 5px; }
+    .nav-links a {
+      padding: 8px 11px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: .82rem;
+      text-decoration: none;
+      transition: background .2s ease, color .2s ease;
+    }
+    .nav-links a:hover { background: var(--surface-raised); color: var(--text); }
+
+    .hero { padding: 84px 0 74px; }
+    .hero-grid { display: grid; grid-template-columns: 1.25fr .75fr; align-items: center; gap: 54px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0 0 20px;
+      color: var(--lime);
+      font-size: .78rem;
+      font-weight: 750;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { width: 7px; height: 7px; border-radius: 50%; background: currentColor; content: ""; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 720px;
+      margin-bottom: 22px;
+      font-size: clamp(3rem, 8vw, 6.7rem);
+      font-weight: 760;
+      letter-spacing: -.085em;
+      line-height: .96;
+    }
+    h1 span { color: var(--lime); }
+    .hero-copy { max-width: 590px; margin-bottom: 28px; color: var(--muted); font-size: 1.06rem; }
+    .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .button {
+      display: inline-flex;
+      min-height: 46px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 19px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: var(--lime);
+      color: var(--bg);
+      font-size: .88rem;
+      font-weight: 750;
+      text-decoration: none;
+      transition: transform .2s ease, background .2s ease;
+    }
+    .button:hover { transform: translateY(-2px); background: #e2ff91; }
+    .button.secondary { border-color: var(--line); background: transparent; color: var(--text); }
+    .button.secondary:hover { background: var(--surface-raised); }
+
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 300px;
+      padding: 29px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: linear-gradient(145deg, rgba(215, 251, 112, .1), rgba(183, 163, 255, .08) 57%, var(--surface));
+    }
+    .hero-card::after {
+      position: absolute;
+      right: -42px;
+      bottom: -96px;
+      width: 260px;
+      height: 260px;
+      border: 1px solid rgba(215, 251, 112, .2);
+      border-radius: 50%;
+      box-shadow: 0 0 0 24px rgba(215, 251, 112, .035), 0 0 0 50px rgba(215, 251, 112, .025);
+      content: "";
+    }
+    .hero-card-label { color: var(--muted); font-size: .8rem; }
+    .hero-number { display: block; margin: 15px 0 3px; color: var(--lime); font-size: clamp(4.5rem, 10vw, 7rem); font-weight: 780; letter-spacing: -.09em; line-height: 1; }
+    .hero-card p { max-width: 245px; margin: 11px 0 0; color: var(--text); font-size: .98rem; }
+    .hero-card-foot { position: absolute; z-index: 1; right: 24px; bottom: 20px; color: var(--muted); font-size: .72rem; }
+
+    .section { padding: 78px 0; border-top: 1px solid var(--line); }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 32px; }
+    .section-kicker { margin-bottom: 9px; color: var(--lime); font-size: .76rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h2 { margin-bottom: 0; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 720; letter-spacing: -.065em; line-height: 1.05; }
+    .section-intro { max-width: 410px; margin: 0; color: var(--muted); font-size: .92rem; }
+    .grid { display: grid; gap: 16px; }
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .relevance-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 32px; }
+    .passport-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .passport-card:nth-child(-n+2) { grid-column: span 3; }
+    .passport-card:nth-child(n+3) { grid-column: span 2; }
+    .research-card { min-height: 100%; }
+    .research-card .card-index { display: block; margin-bottom: 18px; color: var(--lime); font-size: .76rem; font-weight: 750; letter-spacing: .1em; }
+    .research-card p { margin: 8px 0 0; color: var(--muted); font-size: .88rem; }
+    .research-subhead { margin: 0 0 15px; font-size: 1.12rem; letter-spacing: -.025em; }
+    .card {
+      padding: 25px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+    .card h3 { margin-bottom: 5px; font-size: 1.08rem; letter-spacing: -.025em; }
+    .card-note { margin-bottom: 24px; color: var(--muted); font-size: .84rem; }
+    .bar-list { display: grid; gap: 15px; }
+    .bar-item { display: grid; gap: 7px; }
+    .bar-label { display: flex; justify-content: space-between; gap: 12px; font-size: .86rem; }
+    .bar-label strong { font-variant-numeric: tabular-nums; }
+    .track { overflow: hidden; height: 8px; border-radius: 999px; background: #30322d; }
+    .fill { height: 100%; border-radius: inherit; background: var(--lime); }
+    .fill.violet { background: var(--violet); }
+    .fill.orange { background: var(--orange); }
+    .fill.mint { background: var(--mint); }
+    .insight {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-top: 16px;
+      padding: 18px 20px;
+      border: 1px solid rgba(215, 251, 112, .2);
+      border-radius: 16px;
+      background: rgba(215, 251, 112, .055);
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .insight strong { color: var(--lime); font-size: 1.08rem; }
+    .insight p { margin: 0; }
+
+    .context-grid { grid-template-columns: 1fr 1fr; }
+    .mini-label { display: inline-block; margin-bottom: 17px; color: var(--muted); font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .context-callout { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 16px; margin-top: 22px; }
+    .context-callout .number { color: var(--lime); font-size: 2rem; font-weight: 750; letter-spacing: -.06em; }
+    .context-callout p { margin: 0; color: var(--muted); font-size: .84rem; }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    table { width: 100%; min-width: 800px; border-collapse: collapse; text-align: left; }
+    th, td { padding: 18px 20px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    td { font-size: .86rem; }
+    tbody tr:last-child td { border-bottom: 0; }
+    td:first-child { width: 52px; color: var(--lime); font-weight: 750; }
+    .quote { color: var(--text); font-weight: 600; }
+    .tag {
+      display: inline-block;
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--violet);
+      font-size: .74rem;
+      white-space: nowrap;
+    }
+    .table-hint { margin: 11px 0 0; color: var(--muted); font-size: .76rem; }
+
+    .tool-grid { grid-template-columns: 1.05fr .95fr; align-items: stretch; }
+    .tool-card { display: flex; flex-direction: column; min-height: 100%; }
+    .tool-card.featured { border-color: rgba(183, 163, 255, .27); background: linear-gradient(145deg, rgba(183, 163, 255, .1), var(--surface) 62%); }
+    .tool-title { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
+    .tool-icon { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border-radius: 14px; background: rgba(183, 163, 255, .14); color: var(--violet); font-size: 1.2rem; }
+    .tool-title h3 { margin: 0; font-size: 1.22rem; }
+    .tool-title p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
+    .feature-list { display: grid; gap: 12px; margin: 7px 0 20px; padding: 0; list-style: none; }
+    .feature-list li { display: flex; gap: 10px; color: var(--muted); font-size: .87rem; }
+    .feature-list li::before { color: var(--lime); content: "↗"; }
+    .tool-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+    .tool-meta span { padding: 6px 10px; border-radius: 999px; background: rgba(255, 255, 255, .06); color: var(--muted); font-size: .74rem; }
+    .tool-card > p { color: var(--muted); font-size: .9rem; }
+    .bot-handle { display: inline-block; margin: 0 0 16px; color: var(--violet); font-size: .92rem; font-weight: 700; text-decoration: none; }
+
+    .conclusion-grid { grid-template-columns: 1.1fr .9fr; }
+    .conclusion {
+      padding: 32px;
+      border: 1px solid rgba(215, 251, 112, .24);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(215, 251, 112, .1), var(--surface) 70%);
+    }
+    .conclusion .big { margin-bottom: 14px; color: var(--lime); font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 770; letter-spacing: -.08em; line-height: 1; }
+    .conclusion p { max-width: 590px; margin-bottom: 0; color: var(--text); font-size: 1.02rem; }
+    .recommendation { display: flex; flex-direction: column; justify-content: center; }
+    .recommendation h3 { margin-bottom: 10px; color: var(--lime); }
+    .recommendation p { margin: 0; color: var(--muted); }
+    .method { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .method span { padding: 8px 11px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: .77rem; }
+
+    .sources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 0; list-style: none; counter-reset: source; }
+    .sources li { position: relative; min-height: 100%; padding: 19px 19px 19px 52px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--muted); font-size: .82rem; }
+    .sources li::before { position: absolute; top: 18px; left: 19px; color: var(--lime); font-size: .76rem; font-weight: 750; counter-increment: source; content: "0" counter(source); }
+    .sources strong { color: var(--text); }
+
+    footer { padding: 25px 0 36px; border-top: 1px solid var(--line); color: var(--muted); font-size: .77rem; }
+    .footer-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .footer-inner p { margin: 0; }
+    .back-top { color: var(--lime); text-decoration: none; }
+
+    @media (max-width: 760px) {
+      .wrap { width: min(100% - 28px, var(--content)); }
+      .nav { align-items: flex-start; flex-direction: column; gap: 7px; padding: 13px 0 10px; }
+      .nav-links { width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+      .nav-links a { flex: 0 0 auto; padding-inline: 9px; }
+      .hero { padding: 60px 0 52px; }
+      .hero-grid, .stats-grid, .context-grid, .tool-grid, .conclusion-grid { grid-template-columns: 1fr; }
+      .relevance-grid { grid-template-columns: 1fr; }
+      .passport-grid { grid-template-columns: 1fr; }
+      .passport-card:nth-child(-n+2), .passport-card:nth-child(n+3) { grid-column: auto; }
+      .hero-grid { gap: 32px; }
+      .hero-card { min-height: 250px; }
+      .section { padding: 58px 0; }
+      .section-head { align-items: flex-start; flex-direction: column; gap: 13px; }
+      .sources { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  
+    .lit-head { margin-top: 36px; }
+    .lit-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .lit-card { grid-column: span 2; }
+    .lit-card:nth-child(n+4) { grid-column: span 3; }
+    @media (max-width: 900px) { .lit-grid { grid-template-columns: 1fr; } .lit-card, .lit-card:nth-child(n+4) { grid-column: auto; } }
+      .hero-author { margin: 14px 0 0; color: var(--muted); font-size: .95rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="top">
+    <div class="wrap nav">
+      <a class="brand" href="#top" aria-label="Код-свитчинг — на главную">
+        <span class="brand-mark" aria-hidden="true">↔</span>
+        <span>Речь на стыке языков</span>
+      </a>
+      <nav class="nav-links" aria-label="Навигация по странице">
+        <a href="#research">Исследование</a>
+        <a href="#stats">Статистика</a>
+        <a href="#context">Контекст</a>
+        <a href="#examples">Примеры</a>
+        <a href="#tools">Инструменты</a>
+        <a href="#conclusions">Выводы</a>
+        <a href="#sources">Источники</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <p class="eyebrow">Исследование речи · 2026</p>
+          <h1>Когда языки<br>говорят <span>вместе</span></h1>
+<p class="hero-author">Автор: Байсеит Рамазан · Руководитель: Дина Кылыч</p>
+          <p class="hero-copy">Код-свитчинг — это переключение между языками в разговоре. Здесь мы исследуем, как и зачем школьники смешивают русский, казахский и английский.</p>
+          <div class="hero-actions">
+            <a class="button" href="#stats">Смотреть результаты <span aria-hidden="true">&nbsp;↓</span></a>
+            <a class="button secondary" href="#examples">Примеры из чата</a>
+          </div>
+        </div>
+        <aside class="hero-card" aria-label="Главный результат опроса">
+          <span class="hero-card-label">Участники, использующие код-свитчинг</span>
+          <span class="hero-number">87%</span>
+          <p>опрошенных переключают языки в речи: всегда, часто или редко</p>
+          <span class="hero-card-foot">87 из 100 респондентов</span>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="research">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">01 / Исследование</p>
+            <h2>Об исследовании</h2>
+          </div>
+          <p class="section-intro">Зачем изучать переключение языков и на какие вопросы отвечает эта работа.</p>
+        </div>
+
+        <h3 class="research-subhead">Актуальность</h3>
+        <div class="grid relevance-grid">
+          <article class="card research-card">
+            <span class="card-index">01 / ЖИВАЯ РЕЧЬ</span>
+            <h3>Языки в повседневном общении</h3>
+            <p>Русский, казахский и английский встречаются в разговорах школьников. Важно понимать, как переключение между ними стало частью обычной речи.</p>
+          </article>
+          <article class="card research-card">
+            <span class="card-index">02 / ПРИЧИНЫ И КОНТЕКСТ</span>
+            <h3>Не просто смешение</h3>
+            <p>Исследование помогает выяснить, когда и зачем подростки переключают языки: чтобы точнее выразить мысль, говорить быстрее или передать эмоцию.</p>
+          </article>
+          <article class="card research-card">
+            <span class="card-index">03 / ПРАКТИЧЕСКАЯ ПОЛЬЗА</span>
+            <h3>Понимать смешанные фразы</h3>
+            <p>Результаты могут стать основой для словаря-помощника и бота, которые объясняют выражения и помогают подобрать русские аналоги.</p>
+          </article>
+        </div>
+
+        <h3 class="research-subhead">Паспорт исследования</h3>
+        <div class="grid passport-grid">
+          <article class="card research-card passport-card">
+            <span class="card-index">ОБЪЕКТ</span>
+            <h3>Речь учащихся</h3>
+            <p>Речь учащихся 8–9 классов Есикского специализированного лицея-интерната «Білім-инновация» имени А. Малькеева.</p>
+          </article>
+          <article class="card research-card passport-card">
+            <span class="card-index">ПРЕДМЕТ</span>
+            <h3>Код-свитчинг</h3>
+            <p>Типы и причины использования код-свитчинга.</p>
+          </article>
+          <article class="card research-card passport-card">
+            <span class="card-index">ГИПОТЕЗА</span>
+            <h3>Экономия усилий</h3>
+            <p>Код-свитчинг — это экономия речевых усилий, а не безграмотность.</p>
+          </article>
+          <article class="card research-card passport-card">
+            <span class="card-index">ВОПРОС</span>
+            <h3>Что определяет выбор?</h3>
+            <p>Что определяет выбор языка в моменте?</p>
+          </article>
+          <article class="card research-card passport-card">
+            <span class="card-index">МЕТОДИКА</span>
+            <h3>Два этапа</h3>
+            <p>Пилотный опрос 32 респондентов и основной опрос 100 учащихся 8–9 классов; анализ примеров сообщений.</p>
+          </article>
+        </div>
+
+        <h3 class="research-subhead lit-head">Обзор литературы</h3>
+        <div class="grid lit-grid">
+          <article class="card research-card lit-card">
+            <span class="card-index">МАЙЕРС-СКОТТОН · 1993</span>
+            <h3>Модель матричного языка</h3>
+            <p>Основной язык и вставки из гостевого. Основа классификации типов переключения в этом проекте.</p>
+          </article>
+          <article class="card research-card lit-card">
+            <span class="card-index">КАЗНУ · EJPH · 2025</span>
+            <h3>Влияние медиаконтента</h3>
+            <p>Код-свитчинг у детей связан с русским и английским медиаконтентом. Работа объясняет факторы выбора языка.</p>
+          </article>
+          <article class="card research-card lit-card">
+            <span class="card-index">ЖАРКЫНБЕКОВА, ЧЕРНЯВСКАЯ · 2022</span>
+            <h3>Смешение кода как ресурс</h3>
+            <p>Билингвальное общение казахов и русских.</p>
+          </article>
+          <article class="card research-card lit-card">
+            <span class="card-index">ЖАНПЕИСОВА И ДР. · 2025</span>
+            <h3>Код-свитчинг и интерференция</h3>
+            <p>Авторы разграничивают код-свитчинг и языковую интерференцию.</p>
+          </article>
+          <article class="card research-card lit-card">
+            <span class="card-index">ИБРАЕВА И ДР. · 2020</span>
+            <h3>Двуязычие и языковая норма</h3>
+            <p>Русско-казахское двуязычие и его влияние на языковую норму.</p>
+          </article>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="section" id="stats">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">02 / Статистика</p>
+            <h2>Как часто и зачем?</h2>
+          </div>
+          <p class="section-intro">Ответы ста участников показывают: переключение языков — привычная часть повседневной речи.</p>
+        </div>
+        <div class="grid stats-grid">
+          <article class="card">
+            <h3>Как часто используют</h3>
+            <p class="card-note">Доля ответов, всего 100 участников</p>
+            <div class="bar-list" role="list" aria-label="Частота использования код-свитчинга">
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Всегда</span><strong>31%</strong></div><div class="track"><div class="fill" style="width: 31%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Часто</span><strong>28%</strong></div><div class="track"><div class="fill violet" style="width: 28%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Редко</span><strong>28%</strong></div><div class="track"><div class="fill orange" style="width: 28%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Никогда</span><strong>13%</strong></div><div class="track"><div class="fill mint" style="width: 13%"></div></div></div>
+            </div>
+          </article>
+          <article class="card">
+            <h3>Причины переключения</h3>
+            <p class="card-note">Что помогает точнее и быстрее выразить мысль</p>
+            <div class="bar-list" role="list" aria-label="Причины переключения языков">
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Точность</span><strong>38%</strong></div><div class="track"><div class="fill violet" style="width: 38%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Быстрота</span><strong>33%</strong></div><div class="track"><div class="fill" style="width: 33%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Экспрессивность</span><strong>18%</strong></div><div class="track"><div class="fill orange" style="width: 18%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Так принято в компании</span><strong>11%</strong></div><div class="track"><div class="fill mint" style="width: 11%"></div></div></div>
+            </div>
+          </article>
+        </div>
+        <div class="insight">
+          <strong aria-hidden="true">↗</strong>
+          <p><strong>71%</strong> называют причины, связанные с точностью и скоростью формулировки мысли. Самая частая причина — точность (38%), на втором месте быстрота (33%). Это поддерживает гипотезу о функциональной роли код-свитчинга.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="context">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">03 / Контекст</p>
+            <h2>Где это происходит?</h2>
+          </div>
+          <p class="section-intro">Код-свитчинг встречается со всеми группами собеседников, чаще всего с одноклассниками (36,6%).</p>
+        </div>
+        <div class="grid context-grid">
+          <article class="card">
+            <span class="mini-label">С кем говорят</span>
+            <p class="card-note">Доли указаны от числа ответивших на этот вопрос</p>
+            <div class="bar-list" role="list" aria-label="Контекст по собеседникам">
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>С одноклассниками</span><strong>36,6%</strong></div><div class="track"><div class="fill" style="width: 36.6%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>С друзьями</span><strong>28,2%</strong></div><div class="track"><div class="fill violet" style="width: 28.2%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Со всеми одинаково</span><strong>21,1%</strong></div><div class="track"><div class="fill orange" style="width: 21.1%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>С родственниками</span><strong>14,1%</strong></div><div class="track"><div class="fill mint" style="width: 14.1%"></div></div></div>
+            </div>
+            <div class="context-callout"><span class="number">4</span><p>разные группы собеседников — переключение встречается во всех из них</p></div>
+          </article>
+          <article class="card">
+            <span class="mini-label">В каких сообщениях</span>
+            <div class="bar-list" role="list" aria-label="Типы сообщений с код-свитчингом">
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Короткие фразы</span><strong>40%</strong></div><div class="track"><div class="fill" style="width: 40%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Мемы и шутки</span><strong>23%</strong></div><div class="track"><div class="fill violet" style="width: 23%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Обсуждение учёбы</span><strong>19%</strong></div><div class="track"><div class="fill orange" style="width: 19%"></div></div></div>
+              <div class="bar-item" role="listitem"><div class="bar-label"><span>Личные темы и эмоции</span><strong>18%</strong></div><div class="track"><div class="fill mint" style="width: 18%"></div></div></div>
+            </div>
+            <div class="context-callout"><span class="number">40%</span><p>переключений происходят в коротких фразах, где важны скорость и лаконичность</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="examples">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">04 / Примеры</p>
+            <h2>Как это выглядит в речи</h2>
+          </div>
+          <p class="section-intro">В примерах смешиваются русский, казахский и английский. Переключение бывает внутри одной фразы или между предложениями.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">№</th><th scope="col">Сообщение из чата</th><th scope="col">Языковой состав</th><th scope="col">Тип</th><th scope="col">Функция</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>01</td><td class="quote">«Сорян, в кино не пойду, мен бос емеспін»</td><td>Русский + английский + казахский</td><td><span class="tag">Интерфразный</span></td><td>Экономия усилий</td></tr>
+              <tr><td>02</td><td class="quote">«I'm so tired. Бүгін вообще күшім жоқ»</td><td>Английский + казахский + русский</td><td><span class="tag">Интерфразный</span></td><td>Экспрессивность</td></tr>
+              <tr><td>03</td><td class="quote">«Инфу скинь в общий чат, плиз»</td><td>Русский + английский</td><td><span class="tag">Интрафразный / теговый</span></td><td>Экономия усилий</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-hint">На телефоне таблицу можно прокручивать по горизонтали.</p>
+      </div>
+    </section>
+
+    <section class="section" id="tools">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">05 / Практическое применение</p>
+            <h2>Словарь и бот-помощник</h2>
+          </div>
+          <p class="section-intro">По ответам анкетирования составлен словарь-помощник, а разбор смешанной речи можно автоматизировать.</p>
+        </div>
+        <div class="grid tool-grid">
+          <article class="card tool-card">
+            <div class="tool-title">
+              <span class="tool-icon" aria-hidden="true">Aa</span>
+              <div><h3>Словарь-помощник</h3><p>Подборка выражений из анкетирования</p></div>
+            </div>
+            <p>Словарь систематизирует встречающиеся в речи выражения и помогает подобрать русские аналоги.</p>
+            <div class="tool-meta"><span>Основан на ответах участников</span><span>Для повседневных выражений</span></div>
+          </article>
+          <article class="card tool-card featured">
+            <div class="tool-title">
+              <span class="tool-icon" aria-hidden="true">✦</span>
+              <div><h3>NEXORA</h3><p>Telegram-бот со встроенным ИИ</p></div>
+            </div>
+            <a class="bot-handle" href="https://t.me/smart_translator_kz_bot">@smart_translator_kz_bot ↗</a>
+            <ul class="feature-list">
+              <li>Определяет язык и значение отдельных слов</li>
+              <li>Объясняет сленг и ситуацию употребления</li>
+              <li>Переводит фразу на три языка</li>
+            </ul>
+            <div class="tool-meta"><span>Модель: Gemini Flash-Lite</span><span>Разбор смешанных языков</span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="conclusions">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">06 / Итоги</p>
+            <h2>Что показало исследование</h2>
+          </div>
+        </div>
+        <div class="grid conclusion-grid">
+          <article class="conclusion">
+            <p class="big">71% — точность и скорость</p>
+            <p>Код-свитчинг закономерен и обусловлен прежде всего функциональными причинами: точностью и скоростью передачи мысли. Гипотеза подтверждена частично: ведущие причины — точность (38%) и быстрота (33%).</p>
+          </article>
+          <article class="card recommendation">
+            <h3>Рекомендация</h3>
+            <p>Осознанно выбирайте язык в зависимости от цели, адресата и ситуации общения. Словарь и бот помогают систематизировать выражения и находить русские аналоги.</p>
+            <div class="method" aria-label="Методика исследования">
+              <span>Пилотный опрос: 32 человека</span>
+              <span>Основной опрос: 100 учащихся 8–9 классов</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="sources">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">07 / Литература</p>
+            <h2>Список источников</h2>
+          </div>
+          <p class="section-intro">Материалы, упомянутые в исследовании.</p>
+        </div>
+        <ol class="sources">
+          <li><strong>КазНУ, 2025.</strong> Социолингвистический аспект переключения языкового кода у детей // European Journal of Philology. КазНУ им. аль-Фараби, 2025.</li>
+          <li><strong>Myers-Scotton, 1993.</strong> Myers-Scotton C. <em>Duelling Languages: Grammatical Structure in Codeswitching.</em> Oxford: Clarendon Press, 1993.</li>
+          <li><strong>Жаркынбекова Ш. К., Чернявская В. Е., 2022.</strong> Казахско-русская билингвальная практика // Вестник РУДН. 2022. Т. 13, № 2. С. 468–482.</li>
+          <li><strong>Жанпеисова Н. М. и др., 2025.</strong> Лингвистические основы интерференции в речи казахов и русских // Вестник РУДН. 2025. Т. 16, № 3. С. 932–944.</li>
+          <li><strong>Ибраева Ж. К. и др., 2020.</strong> Русско-казахское двуязычие и языковая норма // Вестник КазНУ. 2020. № 3 (179).</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-inner">
+      <p>Автор — Байсеит Рамазан · Руководитель — Дина Кылыч · Есикский лицей-интернат «Білім-инновация»</p>
+      <a class="back-top" href="#top">Наверх ↑</a>
+    </div>
+  </footer>
+</body>
+</html>
