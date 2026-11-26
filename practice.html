@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#10110f">
+  <meta name="description" content="Практика по код-свитчингу: тест, в котором нужно определить тип переключения кодов и отличить его от заимствования.">
+  <title>Практика — код-свитчинг</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #10110f; --surface: #181a17; --surface-raised: #20221e;
+      --text: #f1f0e9; --muted: #a4a69c; --line: rgba(241, 240, 233, .12);
+      --lime: #d7fb70; --violet: #b7a3ff; --orange: #ffb875; --mint: #83e0bb;
+      --radius: 22px; --content: 1120px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: radial-gradient(ellipse at 82% 4%, rgba(183, 163, 255, .09), transparent 34rem), var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+    a { color: inherit; }
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--lime); outline-offset: 4px; }
+    ::selection { background: var(--lime); color: var(--bg); }
+    .wrap { width: min(var(--content), calc(100% - 40px)); margin-inline: auto; }
+
+    .topbar { position: sticky; z-index: 10; top: 0; border-bottom: 1px solid var(--line); background: rgba(16, 17, 15, .84); backdrop-filter: blur(16px); }
+    .nav { display: flex; min-height: 72px; align-items: center; justify-content: space-between; gap: 24px; }
+    .brand { display: inline-flex; align-items: center; gap: 11px; color: var(--text); font-size: .94rem; font-weight: 750; letter-spacing: -.03em; text-decoration: none; white-space: nowrap; }
+    .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: var(--lime); color: var(--bg); font-size: 1rem; font-weight: 900; }
+    .nav-links { display: flex; flex-wrap: wrap; gap: 5px; }
+    .nav-links a { padding: 8px 11px; border-radius: 999px; color: var(--muted); font-size: .82rem; text-decoration: none; transition: background .2s ease, color .2s ease; }
+    .nav-links a:hover, .nav-links a[aria-current] { background: var(--surface-raised); color: var(--text); }
+
+    .page { width: min(720px, calc(100% - 40px)); margin: 0 auto; padding: 64px 0 72px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 9px; margin: 0 0 16px; color: var(--lime); font-size: .78rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow::before { width: 7px; height: 7px; border-radius: 50%; background: currentColor; content: ""; }
+    h1 { margin: 0 0 14px; font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 760; letter-spacing: -.06em; line-height: 1.02; }
+    .lead { margin: 0 0 32px; max-width: 520px; color: var(--muted); }
+
+    .card { padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    .track { overflow: hidden; height: 8px; margin-bottom: 10px; border-radius: 999px; background: #30322d; }
+    .fill { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--lime); transition: width .3s ease; }
+    .meta { display: flex; justify-content: space-between; margin-bottom: 22px; color: var(--muted); font-size: .84rem; }
+    .q { margin: 0 0 16px; font-size: 1.2rem; font-weight: 650; letter-spacing: -.02em; }
+    .ex { margin: 0 0 20px; padding: 14px 18px; border-left: 3px solid var(--lime); border-radius: 0 14px 14px 0; background: var(--surface-raised); font-size: 1.1rem; }
+    .opts { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .opts button { width: 100%; padding: 13px 16px; border: 1px solid var(--line); border-radius: 14px; background: transparent; color: var(--text); font: inherit; font-size: .96rem; text-align: left; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+    .opts button:hover:not(:disabled) { border-color: var(--lime); background: var(--surface-raised); }
+    .opts button:disabled { cursor: default; }
+    .opts button.ok { border-color: var(--mint); background: rgba(131, 224, 187, .12); }
+    .opts button.bad { border-color: var(--orange); background: rgba(255, 184, 117, .12); }
+    .fb { margin-top: 18px; padding: 14px 16px; border-radius: 14px; font-size: .92rem; }
+    .fb.ok { background: rgba(131, 224, 187, .12); }
+    .fb.bad { background: rgba(255, 184, 117, .12); }
+    .fb b { display: block; margin-bottom: 2px; }
+    .fb.ok b { color: var(--mint); }
+    .fb.bad b { color: var(--orange); }
+    .btn { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; margin-top: 18px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--lime); color: var(--bg); font: inherit; font-size: .9rem; font-weight: 750; cursor: pointer; transition: transform .2s ease, background .2s ease; }
+    .btn:hover { transform: translateY(-2px); background: #e2ff91; }
+    .score { margin: 0 0 6px; color: var(--lime); font-size: clamp(3.5rem, 12vw, 5.5rem); font-weight: 780; letter-spacing: -.08em; line-height: 1; }
+    .hidden { display: none; }
+
+    .ref { margin-top: 28px; padding: 20px 24px; border: 1px solid var(--line); border-radius: var(--radius); color: var(--muted); font-size: .9rem; }
+    .ref p { margin: 0; }
+    .ref b { color: var(--text); }
+
+    footer { padding: 25px 0 36px; border-top: 1px solid var(--line); color: var(--muted); font-size: .77rem; }
+    .footer-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .footer-inner p { margin: 0; }
+    .back-top { color: var(--lime); text-decoration: none; }
+    @media (max-width: 640px) { .nav { flex-wrap: wrap; padding: 10px 0; gap: 8px; } .card { padding: 20px; } }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap nav">
+      <a class="brand" href="index.html" aria-label="Код-свитчинг — на главную">
+        <span class="brand-mark" aria-hidden="true">↔</span>
+        <span>Речь на стыке языков</span>
+      </a>
+      <nav class="nav-links" aria-label="Навигация">
+        <a href="index.html">← К исследованию</a>
+        <a href="practice.html" aria-current="page">Практика</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="eyebrow">Практика</p>
+    <h1>Определи код-свитчинг</h1>
+    <p class="lead">7 вопросов. После каждого ответа появится объяснение, так что учиться можно прямо в процессе.</p>
+
+    <section class="card" id="quiz" aria-live="polite">
+      <div class="track"><i class="fill" id="progress"></i></div>
+      <div class="meta"><span id="counter"></span><span id="score-now"></span></div>
+      <div id="question"></div>
+      <div id="feedback"></div>
+      <button class="btn hidden" id="next" type="button">Дальше</button>
+    </section>
+
+    <section class="card hidden" id="result">
+      <p class="score" id="final"></p>
+      <p id="verdict"></p>
+      <button class="btn" id="restart" type="button">Пройти ещё раз</button>
+    </section>
+
+    <div class="ref">
+      <p><b>Шпаргалка.</b> Тег: короткая вставка из другого языка («you know», «okay»). Между предложениями: язык меняется на границе предложений или частей. Внутри предложения: слова другого языка прямо внутри фразы. Заимствование: слово уже вошло в язык и используется как обычное («скриншот», «лайкнуть»).</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap footer-inner">
+      <p>Автор — Байсеит Рамазан · Руководитель — Дина Кылыч · Есикский лицей-интернат «Білім-инновация»</p>
+      <a class="back-top" href="index.html">На главную ↑</a>
+    </div>
+  </footer>
+
+<script>
+// Чтобы добавить вопрос, скопируйте любой объект ниже и измените текст.
+// correct — номер верного варианта (с нуля).
+const QUESTIONS = [
+  { text:"Какой это тип переключения?", example:"Вчера мы ходили в кафе, и там было очень вкусно. I really liked the dessert, honestly.",
+    options:["Тег","Между предложениями","Внутри предложения","Заимствование"], correct:1,
+    why:"Язык меняется на границе предложений: первое по-русски, второе по-английски." },
+  { text:"Какой это тип переключения?", example:"Я хотел купить red куртку, но не нашёл размер.",
+    options:["Тег","Между предложениями","Внутри предложения","Заимствование"], correct:2,
+    why:"Английское слово стоит прямо внутри русской фразы. Это переключение внутри предложения." },
+  { text:"Какой это тип переключения?", example:"Он такой, you know, немного странный.",
+    options:["Тег","Между предложениями","Внутри предложения","Заимствование"], correct:0,
+    why:"«You know» — короткая вставка, которая не меняет структуру фразы. Такое называют тегом." },
+  { text:"Это код-свитчинг?", example:"Я скачал новое приложение и сделал скриншот.",
+    options:["Да, внутри предложения","Да, тег","Нет, это заимствование","Нет, это ошибка"], correct:2,
+    why:"«Приложение» и «скриншот» давно стали частью русского языка: они склоняются и воспринимаются как русские слова." },
+  { text:"Какой это тип переключения?", example:"Мен дүкенге бардым, потом домой пошёл.",
+    options:["Между частями предложения","Тег","Заимствование","Это не переключение"], correct:0,
+    why:"Первая часть по-казахски («Я пошёл в магазин»), вторая по-русски. Язык меняется на границе частей." },
+  { text:"Верно ли утверждение: «Человек переключает языки, потому что плохо знает один из них»?", example:"",
+    options:["Верно всегда","Неверно: чаще всего так делают люди, которые хорошо знают оба языка"], correct:1,
+    why:"Для переключения нужно уверенно владеть обоими языками. Люди переключаются, чтобы точнее выразить мысль, подчеркнуть эмоцию или показать принадлежность к группе." },
+  { text:"Зачем люди переключают языки в разговоре?", example:"",
+    options:["Чтобы точнее выразить мысль","Чтобы подчеркнуть эмоцию или шутку","Чтобы показать, что они свои в группе","Всё перечисленное"], correct:3,
+    why:"У код-свитчинга много функций, и все три причины встречаются в реальной речи." }
+];
+
+let i = 0, score = 0, answered = false;
+const $ = id => document.getElementById(id);
+
+function show(){
+  answered = false;
+  const q = QUESTIONS[i];
+  $("counter").textContent = "Вопрос " + (i+1) + " из " + QUESTIONS.length;
+  $("score-now").textContent = "Верно: " + score;
+  $("progress").style.width = (i / QUESTIONS.length * 100) + "%";
+  $("feedback").innerHTML = "";
+  $("next").classList.add("hidden");
+  const box = $("question");
+  box.innerHTML = "";
+  const p = document.createElement("p"); p.className = "q"; p.textContent = q.text; box.appendChild(p);
+  if (q.example){ const e = document.createElement("p"); e.className = "ex"; e.textContent = q.example; box.appendChild(e); }
+  const ul = document.createElement("ul"); ul.className = "opts";
+  q.options.forEach((t, k) => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.type = "button"; b.textContent = t; b.onclick = () => answer(k);
+    li.appendChild(b); ul.appendChild(li);
+  });
+  box.appendChild(ul);
+}
+
+function answer(k){
+  if (answered) return;
+  answered = true;
+  const q = QUESTIONS[i], right = k === q.correct;
+  if (right) score++;
+  document.querySelectorAll(".opts button").forEach((b, n) => {
+    b.disabled = true;
+    if (n === q.correct) b.classList.add("ok"); else if (n === k) b.classList.add("bad");
+  });
+  $("score-now").textContent = "Верно: " + score;
+  const fb = document.createElement("div");
+  fb.className = "fb " + (right ? "ok" : "bad");
+  const head = document.createElement("b");
+  head.textContent = right ? "Верно" : "Неверно";
+  fb.appendChild(head);
+  fb.appendChild(document.createTextNode(q.why));
+  $("feedback").innerHTML = "";
+  $("feedback").appendChild(fb);
+  const nx = $("next");
+  nx.textContent = i === QUESTIONS.length - 1 ? "Показать результат" : "Дальше";
+  nx.classList.remove("hidden");
+  nx.focus();
+}
+
+$("next").onclick = () => { if (i < QUESTIONS.length - 1){ i++; show(); } else finish(); };
+
+function finish(){
+  $("quiz").classList.add("hidden");
+  $("result").classList.remove("hidden");
+  $("final").textContent = score + " из " + QUESTIONS.length;
+  const r = score / QUESTIONS.length;
+  $("verdict").textContent = r === 1 ? "Отлично, все типы различаешь уверенно."
+    : r >= 0.6 ? "Хороший результат. Перечитай шпаргалку внизу и попробуй ещё раз."
+    : "Пока есть пробелы. Прочитай шпаргалку внизу и пройди тест заново.";
+}
+
+$("restart").onclick = () => {
+  i = 0; score = 0;
+  $("result").classList.add("hidden");
+  $("quiz").classList.remove("hidden");
+  show();
+};
+
+show();
+</script>
+</body>
+</html>
